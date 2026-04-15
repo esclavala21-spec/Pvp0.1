@@ -302,31 +302,58 @@
         <button onclick="closeModal()" style="width: 100%; margin-top: 5px; background: #444;">Cancelar</button>
     </div>
 
-    <div id="brush-settings-modal" class="modal">
+        <div id="brush-settings-modal" class="modal">
         <h3 style="margin-top: 0; text-align: center;">🎛️ Ajustes del Pincel</h3>
         
-        <div class="input-group">
-            <label style="font-size: 13px;">Comportamiento Base</label>
-            <select id="bsBase">
-                <option value="lapiz">✏️ Normal (Lápiz)</option>
-                <option value="delineado">🖋️ Delineado (Filo suave)</option>
-                <option value="marcador">🖍️ Transparente (Marcador)</option>
-                <option value="pincel">🖌️ Difuminado (Pincel)</option>
-                <option value="aerografo">💨 Aerógrafo</option>
-                <option value="neon">✨ Brillante (Neón)</option>
-                <option value="acuarela">💧 Acuarela</option>
-                <option value="resaltador">🟨 Resaltador</option>
-            </select>
+        <div style="background: #ffffff; border-radius: 8px; margin-bottom: 15px; border: 2px solid #555; padding: 5px;">
+            <canvas id="brush-preview" width="280" height="80" style="width: 100%; display: block;"></canvas>
+        </div>
+
+        <div style="max-height: 45vh; overflow-y: auto; padding-right: 5px;">
+            <div class="input-group">
+                <label style="font-size: 13px;">Comportamiento Base</label>
+                <select id="bsBase" onchange="updateBrushPreviewUI()">
+                    <option value="lapiz">✏️ Normal (Lápiz)</option>
+                    <option value="delineado">🖋️ Delineado (Filo suave)</option>
+                    <option value="marcador">🖍️ Transparente (Marcador)</option>
+                    <option value="pincel">🖌️ Difuminado (Pincel)</option>
+                    <option value="aerografo">💨 Aerógrafo</option>
+                    <option value="neon">✨ Brillante (Neón)</option>
+                    <option value="acuarela">💧 Acuarela</option>
+                    <option value="resaltador">🟨 Resaltador</option>
+                </select>
+            </div>
+            
+            <label style="font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 5px;">
+                Tamaño <span id="bsSizeVal" style="color: var(--accent); font-weight: bold;">5</span>
+            </label>
+            <input type="range" id="bsSize" min="1" max="100" value="5" oninput="updateBrushPreviewUI()" style="margin-bottom: 15px; width: 100%;">
+
+            <label style="font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 5px;">
+                Opacidad <span id="bsOpacityVal" style="color: var(--accent); font-weight: bold;">100%</span>
+            </label>
+            <input type="range" id="bsOpacity" min="1" max="100" value="100" oninput="updateBrushPreviewUI()" style="margin-bottom: 15px; width: 100%;">
+
+            <label style="font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 5px;">
+                Dureza (Borde) <span id="bsHardnessVal" style="color: var(--accent); font-weight: bold;">100%</span>
+            </label>
+            <input type="range" id="bsHardness" min="0" max="100" value="100" oninput="updateBrushPreviewUI()" style="margin-bottom: 15px; width: 100%;">
+
+            <label style="font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 5px;">
+                Forma de Punta <span id="bsShapeVal" style="color: var(--accent); font-weight: bold;">100%</span>
+            </label>
+            <input type="range" id="bsShape" min="10" max="100" value="100" oninput="updateBrushPreviewUI()" style="margin-bottom: 15px; width: 100%;">
+
+            <label style="font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 5px;">
+                Espaciado <span id="bsSpacingVal" style="color: var(--accent); font-weight: bold;">35%</span>
+            </label>
+            <input type="range" id="bsSpacing" min="1" max="150" value="35" oninput="updateBrushPreviewUI()" style="margin-bottom: 20px; width: 100%;">
         </div>
         
-        <label style="font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 5px;">
-            Espaciado <span id="bsSpacingVal" style="color: var(--accent); font-weight: bold;">35%</span>
-        </label>
-        <input type="range" id="bsSpacing" min="1" max="150" value="35" oninput="document.getElementById('bsSpacingVal').innerText = this.value + '%'" style="margin-bottom: 20px; width: 100%;">
-        
-        <button onclick="saveCurrentAsNewCustomBrush()" style="width: 100%; background: #43b581; margin-bottom: 10px;">💾 Guardar como Pincel Nuevo</button>
+        <button onclick="saveCurrentAsNewCustomBrush()" style="width: 100%; background: #43b581; margin-bottom: 10px; margin-top: 10px;">💾 Guardar Pincel Modificado</button>
         <button onclick="closeBrushSettingsModal()" style="width: 100%; background: #444;">Volver al Dibujo</button>
     </div>
+
 
     <div id="timelapse-modal" class="modal">
         <h3>🎥 Exportar Time-Lapse</h3>
@@ -1825,7 +1852,16 @@ function renderLayerUI() {
             lastTintHex = color;
         }
 
-        function drawCustomBrush(ctx, x1, y1, x2, y2) {
+        
+        function saveCurrentColor() {
+            const hex = colorPickerEl.value.toUpperCase();
+            if(savedColorsArr.includes(hex)) return;
+            
+            savedColorsArr.unshift(hex); 
+            localStorage.setItem('studioColors', JSON.stringify(savedColorsArr));
+            renderPalette();
+        }
+                function drawCustomBrush(ctx, x1, y1, x2, y2) {
             if(isEraser) { draw(x2, y2); return; } 
             if(!customBrushTinted) { draw(x2, y2); return; } 
             
@@ -1838,46 +1874,55 @@ function renderLayerUI() {
             
             let currentBrush = savedBrushesArr.find(b => b.id === activeCustomBrushId);
             let baseType = currentBrush ? currentBrush.base : 'lapiz';
-            let spacingPercent = currentBrush && currentBrush.spacing ? currentBrush.spacing : 35;
+            
+            // Cargar los nuevos ajustes o usar valores por defecto para pinceles viejos
+            let spacingPercent = currentBrush && currentBrush.spacing !== undefined ? currentBrush.spacing : 35;
+            let customOpacity = currentBrush && currentBrush.opacity !== undefined ? currentBrush.opacity / 100 : 1.0;
+            let customHardness = currentBrush && currentBrush.hardness !== undefined ? currentBrush.hardness : 100;
+            let customShape = currentBrush && currentBrush.shape !== undefined ? currentBrush.shape / 100 : 1.0;
             
             const spacing = Math.max(1, size * (spacingPercent / 100)); 
             
-            ctx.globalAlpha = 1.0;
+            ctx.globalAlpha = customOpacity;
             ctx.globalCompositeOperation = isAlphaLock ? 'source-atop' : 'source-over';
-            ctx.shadowBlur = 0;
+            
+            // Aplicar dureza (sombras difuminadas)
+            ctx.shadowBlur = ((100 - customHardness) / 100) * (size * 1.5);
+            ctx.shadowColor = ctx.shadowBlur > 0 ? color : 'transparent';
 
-            if (baseType === 'marcador') { ctx.globalAlpha = 0.4; }
+            // Mezclar comportamientos base con las opacidades customizadas
+            if (baseType === 'marcador') { ctx.globalAlpha = customOpacity * 0.4; }
             else if (baseType === 'delineado') { ctx.shadowBlur = Math.max(1, size * 0.15); ctx.shadowColor = 'rgba(0,0,0,0.6)'; }
-            else if (baseType === 'pincel') { ctx.shadowBlur = size * 0.8; ctx.shadowColor = color; ctx.globalAlpha = 0.8 * currentPressure; }
-            else if (baseType === 'aerografo') { ctx.shadowBlur = size * 2; ctx.shadowColor = color; ctx.globalAlpha = 0.15 * currentPressure; }
-            else if (baseType === 'neon') { ctx.shadowBlur = size * 1.5; ctx.shadowColor = color; }
-            else if (baseType === 'acuarela') { ctx.globalAlpha = 0.05 * currentPressure; ctx.shadowBlur = size; ctx.shadowColor = color; }
-            else if (baseType === 'resaltador') { ctx.globalAlpha = 0.4; ctx.globalCompositeOperation = isAlphaLock ? 'source-atop' : 'multiply'; }
+            else if (baseType === 'pincel') { ctx.shadowBlur = size * 0.8 + ctx.shadowBlur; ctx.shadowColor = color; ctx.globalAlpha = customOpacity * 0.8 * currentPressure; }
+            else if (baseType === 'aerografo') { ctx.shadowBlur = size * 2 + ctx.shadowBlur; ctx.shadowColor = color; ctx.globalAlpha = customOpacity * 0.15 * currentPressure; }
+            else if (baseType === 'neon') { ctx.shadowBlur = size * 1.5 + ctx.shadowBlur; ctx.shadowColor = color; }
+            else if (baseType === 'acuarela') { ctx.globalAlpha = customOpacity * 0.05 * currentPressure; ctx.shadowBlur = size + ctx.shadowBlur; ctx.shadowColor = color; }
+            else if (baseType === 'resaltador') { ctx.globalAlpha = customOpacity * 0.4; ctx.globalCompositeOperation = isAlphaLock ? 'source-atop' : 'multiply'; }
             
             if(dist === 0) { 
-                ctx.drawImage(customBrushTinted, x1 - size/2, y1 - size/2, size, size);
+                ctx.save();
+                ctx.translate(x1, y1);
+                ctx.scale(1, customShape);
+                ctx.drawImage(customBrushTinted, -size/2, -size/2, size, size);
+                ctx.restore();
             } else {
                 for(let i=0; i<dist; i+=spacing) {
                     const cx = x1 + Math.cos(angle)*i;
                     const cy = y1 + Math.sin(angle)*i;
-                    ctx.drawImage(customBrushTinted, cx - size/2, cy - size/2, size, size);
+                    ctx.save();
+                    ctx.translate(cx, cy);
+                    ctx.scale(1, customShape); // Aplica la compresión a la punta
+                    ctx.drawImage(customBrushTinted, -size/2, -size/2, size, size);
+                    ctx.restore();
                 }
             }
 
+            // Resetear para que no afecte a otras herramientas
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
             ctx.globalCompositeOperation = isAlphaLock ? 'source-atop' : 'source-over';
         }
-        
-        function saveCurrentColor() {
-            const hex = colorPickerEl.value.toUpperCase();
-            if(savedColorsArr.includes(hex)) return;
-            
-            savedColorsArr.unshift(hex); 
-            localStorage.setItem('studioColors', JSON.stringify(savedColorsArr));
-            renderPalette();
-        }
-        
+
         function deleteColor(hex, event) {
             event.stopPropagation(); 
             savedColorsArr = savedColorsArr.filter(c => c !== hex);
@@ -2545,30 +2590,167 @@ function mergeLayerDown(i) {
     captureTimelapseFrame();
 }
 
-        // LÓGICA DEL NUEVO BOTÓN DE AJUSTES
+                // --- LÓGICA DE AJUSTES AVANZADOS DE PINCEL Y VISTA PREVIA ---
+
         function openBrushSettingsModal() {
             const t = brushTypeEl.value;
             let currentBase = 'lapiz';
             let currentSpacing = 35;
+            let currentSize = parseInt(brushSizeEl.value) || 5;
+            let currentOpacity = 100;
+            let currentHardness = 100;
+            let currentShape = 100;
 
             if (t === 'custom' && activeCustomBrushId) {
                 const brush = savedBrushesArr.find(b => b.id === activeCustomBrushId);
                 if(brush) {
                     currentBase = brush.base || 'lapiz';
-                    currentSpacing = brush.spacing || 35;
+                    currentSpacing = brush.spacing !== undefined ? brush.spacing : 35;
+                    currentSize = brush.size || currentSize;
+                    currentOpacity = brush.opacity !== undefined ? brush.opacity : 100;
+                    currentHardness = brush.hardness !== undefined ? brush.hardness : 100;
+                    currentShape = brush.shape !== undefined ? brush.shape : 100;
                 }
             } else if (t !== 'custom') {
                 const validBases = ['lapiz', 'delineado', 'marcador', 'pincel', 'aerografo', 'neon', 'acuarela', 'resaltador'];
                 if(validBases.includes(t)) currentBase = t;
             }
 
+            // Sincronizar inputs
             document.getElementById('bsBase').value = currentBase;
+            document.getElementById('bsSize').value = currentSize;
+            document.getElementById('bsOpacity').value = currentOpacity;
+            document.getElementById('bsHardness').value = currentHardness;
+            document.getElementById('bsShape').value = currentShape;
             document.getElementById('bsSpacing').value = currentSpacing;
-            document.getElementById('bsSpacingVal').innerText = currentSpacing + '%';
 
             document.getElementById('brush-settings-modal').style.display = 'block';
             document.getElementById('modal-overlay').style.display = 'block';
+            
+            // Forzar primer dibujado de la vista previa
+            updateBrushPreviewUI();
         }
+
+        function closeBrushSettingsModal() {
+            document.getElementById('brush-settings-modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        function updateBrushPreviewUI() {
+            // Actualizar textos
+            const size = document.getElementById('bsSize').value;
+            const op = document.getElementById('bsOpacity').value;
+            const hd = document.getElementById('bsHardness').value;
+            const sh = document.getElementById('bsShape').value;
+            const sp = document.getElementById('bsSpacing').value;
+
+            document.getElementById('bsSizeVal').innerText = size;
+            document.getElementById('bsOpacityVal').innerText = op + '%';
+            document.getElementById('bsHardnessVal').innerText = hd + '%';
+            document.getElementById('bsShapeVal').innerText = sh + '%';
+            document.getElementById('bsSpacingVal').innerText = sp + '%';
+
+            drawPreviewStroke();
+        }
+
+        function drawPreviewStroke() {
+            const canvas = document.getElementById('brush-preview');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const size = parseInt(document.getElementById('bsSize').value);
+            const opacity = parseInt(document.getElementById('bsOpacity').value) / 100;
+            const hardness = parseInt(document.getElementById('bsHardness').value);
+            const shape = parseInt(document.getElementById('bsShape').value) / 100;
+            const spacing = parseInt(document.getElementById('bsSpacing').value);
+            const base = document.getElementById('bsBase').value;
+
+            const color = colorPickerEl.value; // Usar el color actual seleccionado
+            
+            // Configurar blur (dureza) y opacidad global
+            ctx.globalAlpha = opacity;
+            const blurAmount = ((100 - hardness) / 100) * (size * 1.5); 
+            ctx.shadowBlur = blurAmount;
+            ctx.shadowColor = color;
+            ctx.fillStyle = color;
+
+            const startX = 30, endX = 250;
+            const dist = endX - startX;
+            const step = Math.max(1, size * (spacing / 100));
+
+            // Dibujar una curva (onda seno) para visualizar mejor el trazo
+            for(let i = 0; i <= dist; i += step) {
+                const cx = startX + i;
+                const cy = 40 + Math.sin(i * 0.05) * 15; 
+
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(1, shape); // Aplicar compresión vertical (forma de punta)
+
+                if (base === 'marcador') ctx.globalAlpha = opacity * 0.4;
+                if (base === 'acuarela') ctx.globalAlpha = opacity * 0.2;
+
+                ctx.beginPath();
+                ctx.arc(0, 0, size/2, 0, Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function saveCurrentAsNewCustomBrush() {
+            const baseBehavior = document.getElementById('bsBase').value;
+            const sizeVal = parseInt(document.getElementById('bsSize').value);
+            const opacityVal = parseInt(document.getElementById('bsOpacity').value);
+            const hardnessVal = parseInt(document.getElementById('bsHardness').value);
+            const shapeVal = parseInt(document.getElementById('bsShape').value);
+            const spacingVal = parseInt(document.getElementById('bsSpacing').value);
+            
+            const newId = Date.now();
+            let dataUrl = "";
+
+            if (brushTypeEl.value === 'custom' && customBrushImg) {
+                dataUrl = customBrushImg.src;
+            } else {
+                const tCan = document.createElement('canvas');
+                tCan.width = 160; tCan.height = 160;
+                const tCtx = tCan.getContext('2d');
+                tCtx.fillStyle = "black";
+                tCtx.beginPath();
+                tCtx.arc(80, 80, 40, 0, Math.PI*2);
+                tCtx.fill();
+                dataUrl = tCan.toDataURL();
+            }
+
+            const newBrush = {
+                id: newId,
+                src: dataUrl,
+                base: baseBehavior,
+                size: sizeVal,
+                opacity: opacityVal,
+                hardness: hardnessVal,
+                shape: shapeVal,
+                spacing: spacingVal
+            };
+
+            savedBrushesArr.unshift(newBrush);
+
+            try {
+                localStorage.setItem('studioBrushes', JSON.stringify(savedBrushesArr));
+            } catch(e) {
+                alert("¡Límite de memoria alcanzado! Borra algunos pinceles antiguos antes de guardar.");
+                savedBrushesArr.shift();
+                return;
+            }
+
+            // Aplicar el tamaño al slider global para que se aplique de inmediato
+            brushSizeEl.value = sizeVal;
+            document.getElementById('brushSizeVal').innerText = sizeVal;
+
+            closeBrushSettingsModal();
+            selectCustomBrush(newId);
+            renderBrushes();
+        }
+
 
         function closeBrushSettingsModal() {
             document.getElementById('brush-settings-modal').style.display = 'none';
